@@ -1,4 +1,8 @@
+import numpy as np
 import pickle
+import random
+import torch
+
 
 BASE_DIR = "aclImdb/"
 CHAR_SPEC = '[^a-zA-Z0-9 \n\.]'
@@ -21,4 +25,13 @@ def dump_pickle(x, path):
 def load_pickle(path):
     with open(path, "rb") as f:
         return pickle.load(f)
+    
+
+def set_seed(seed):
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
 
