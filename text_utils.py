@@ -2,6 +2,11 @@ import numpy as np
 import os
 import pandas as pd
 import re
+import torch
+from torch.utils.data import (
+    DataLoader,
+    Dataset
+)
 
 from collections import Counter
 from tqdm.autonotebook import tqdm
@@ -19,6 +24,37 @@ from utils import (
     dump_pickle,
     load_pickle
 )
+
+
+class TextDataset(Dataset):
+    
+    def __init__(self, 
+                 meta,
+                 processor,
+                 tokenizer):
+        super(TextDataset, self).__init__()
+        self.meta = pd.read_csv(meta) if isinstance(meta, str) else meta
+        self.all_cls = self.meta["class"].unique()
+        self.num_classes = len(self.all_cls)
+        if self.meta["class"].dtype != "int":
+            cls_map = dict(zip(self.all_cls, range(len(self.all_cls))))
+            self.meta["class"] = self.meta["class"].map(cls_map)
+        self.processor = processor
+        self.tokenizer = tokenizer
+        
+    def __len__(self):
+        return len(self.meta)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        label = self.meta.iloc[idx, 1]
+        textpath = self.meta.iloc[idx, 0]
+        text = self.processor.process_text(textpath)
+        tokens = self.tokenizer.transform(text)
+        tokens = torch.Tensor(tokens)
+        return tokens, label
+
 
 
 class TextTokenizer:
