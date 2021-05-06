@@ -125,7 +125,7 @@ class TextTokenizer:
         
     def transform(self, X):
         transformed = []
-        if len(X) == 1:
+        if not isinstance(X[0], list):
             X = [X]
         for text in tqdm(X):
             transformed.append(self.tokenize_text(text))
