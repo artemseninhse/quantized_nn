@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import pandas as pd
 import re
 
@@ -166,15 +167,26 @@ class TextProcessor:
             return self.process_fn(x)
         return x
 
-    def create_meta(self):
-        if isinstance(self.meta, str):
-            self.meta = pd.read_csv(self.meta)
+    def create_meta(self,
+                    path=None):
+        meta_df = []
+        for split in SPLITS:
+            for cls in CLASSES:
+                files_list = os.listdir(os.path.join(BASE_DIR, split, cls))
+                meta_df += [(os.path.join(BASE_DIR, split, cls, filepath), cls)
+                                for filepath in files_list]
+        self.meta = pd.DataFrame(meta_df, columns=["filepath", "class"])
+        self.meta["train"] = np.random.RandomState(SEED).binomial(1, 0.8, len(self.meta))
+        if not path:
+            self.meta.to_csv(META_PATH, index=None)
+        else:
+            self.meta.to_csv(path, index=None)
 
     def get_corpus(self):
         if self.corpus:
             return self.corpus
         self.create_meta()
         return [self.process_text(filepath) for filepath in
-                            tqdm(self.meta["filepath"].values)]
+                tqdm(self.meta["filepath"].values)], self.meta["class"].values.tolist()
 
             
