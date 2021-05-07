@@ -14,7 +14,7 @@ class SimpleTextCNN(nn.Module):
                  out_channels,
                  pool_size,
                  custom_layers={}):
-        super(CNN_Text, self).__init__()
+        super(SimpleTextCNN, self).__init__()
         assert ksize_min > 1 and \
                 ksize_max > ksize_min and \
                 ksize_max < max_len, \
