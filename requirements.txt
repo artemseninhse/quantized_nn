@@ -5,3 +5,9 @@ torch==1.8.1
 torchtext==0.9.1
 tqdm==4.60.0
 matplotlib
+boto3
+requests
+regex
+sentencepiece
+sacremoses
+jupyter
