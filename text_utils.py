@@ -146,6 +146,7 @@ class TextTokenizer:
                           tokens):
         text = []
         for tok in tokens:
+            tok = int(tok)
             if tok != self.tok2id["sos_tok"] and \
                 tok != self.tok2id["eos_tok"] and \
                 tok != self.tok2id["pad_tok"]:
