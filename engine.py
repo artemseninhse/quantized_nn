@@ -2,6 +2,8 @@ import models
 
 from argparse import ArgumentParser
 from text_utils import DataConfigurator
+from trainer import NNTrainer
+from utils import N_EPOCHS
 
 
 class ModelEvaluator:
@@ -16,6 +18,7 @@ class ModelEvaluator:
         :param n_bits: integer specyfying the intensity of quantization
         """
         self.data_configurator = DataConfigurator()
+        self.trainer = NNTrainer
         self.model_name = model_name
         self.quantization = {}
         if quantization:
@@ -30,7 +33,10 @@ class ModelEvaluator:
         :return: model trained
         """
         # todo: write trainer.py module w train loop, epoch func, configurator etc
-        pass
+        self.trainer = self.trainer(self.data,
+                                    self.model,
+                                    N_EPOCHS)
+        self.model = self.trainer.train()
     
     def validate(self):
         """
