@@ -20,7 +20,7 @@ class ModelEvaluator:
             self.quantization["type"] = quantization
             self.quantization["n_bits"] = n_bits
         self.model = getattr(models, self.model_name)(quantization=self.quantization)
-        self.data = ()
+        self.data = {}
         
     def get_data(self):
         """
