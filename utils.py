@@ -13,6 +13,7 @@ FREQ_BND = 50
 LR = 1e-4
 MAX_LEN = 500
 META_PATH = "imdb_meta_df.csv"
+N_EPOCHS = 10
 PAD_METHOD = "post"
 POOL_SIZE = 10
 SEED = 1234567890
