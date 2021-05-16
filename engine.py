@@ -1,12 +1,13 @@
 import models
 
 from argparse import ArgumentParser
+from text_utils import DataConfigurator
 
 
 class ModelEvaluator:
     
     def __init__(self,
-                 model_name,
+                 model_name="SimpleTextCNN",
                  quantization=None,
                  n_bits=8):
         """
@@ -14,6 +15,7 @@ class ModelEvaluator:
         :param quantization: string from ['static', 'dynamic', 'aware'] or None
         :param n_bits: integer specyfying the intensity of quantization
         """
+        self.data_configurator = DataConfigurator()
         self.model_name = model_name
         self.quantization = {}
         if quantization:
@@ -21,15 +23,6 @@ class ModelEvaluator:
             self.quantization["n_bits"] = n_bits
         self.model = getattr(models, self.model_name)(quantization=self.quantization)
         self.data = {}
-        
-    def get_data(self):
-        """
-        Prepare train, validation and test samples for model training and 
-        metrics evaluation and return several items for inference examples.
-        Samples are taken from IMDB Dataset
-        """
-        # todo: put data in self.data
-        pass
     
     def train(self):
         """
@@ -53,19 +46,19 @@ class ModelEvaluator:
         Train model, calculate test metrics, print inference examples and inference time
         and log metrics, examples and time
         """
-        self.get_data()
+        self.data = self.data_configurator.configurate()
         self.train()
         self.validate()
 
 
 parser = ArgumentParser()
-parser.add_argument("model_name",
+parser.add_argument("--model_name",
                     required=False,
                     default="SimpleTextCNN")
-parser.add_argument("quantization",
+parser.add_argument("--quantization",
                     required=False,
                     default="")
-parser.add_argument("n_bits",
+parser.add_argument("--n_bits",
                     required=False,
                     default="8")
 
