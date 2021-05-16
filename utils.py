@@ -5,6 +5,7 @@ import torch
 
 
 BASE_DIR = "aclImdb/"
+BATCH_SIZE = 16
 CHAR_SPEC = '[^a-zA-Z0-9 \n\.]'
 CLASSES = ["pos", "neg"]
 FREQ_BND = 50

@@ -12,6 +12,7 @@ from collections import Counter
 from tqdm.autonotebook import tqdm
 from utils import (
     BASE_DIR,
+    BATCH_SIZE,
     CHAR_SPEC,
     CLASSES,
     FREQ_BND,
