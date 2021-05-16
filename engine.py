@@ -21,7 +21,6 @@ class ModelEvaluator:
         if quantization:
             self.quantization["type"] = quantization
             self.quantization["n_bits"] = n_bits
-        self.model = getattr(models, self.model_name)(quantization=self.quantization)
         self.data = {}
     
     def train(self):
@@ -47,6 +46,8 @@ class ModelEvaluator:
         and log metrics, examples and time
         """
         self.data = self.data_configurator.configurate()
+        self.model = getattr(models, self.model_name)(vocab_size=len(self.data_configurator.tokenizer.tok2id)+1,
+                                                      quantization=self.quantization)
         self.train()
         self.validate()
 
