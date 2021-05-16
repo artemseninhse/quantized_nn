@@ -214,7 +214,6 @@ class TextProcessor:
                 meta_df += [(os.path.join(BASE_DIR, split, cls, filepath), cls)
                                 for filepath in files_list]
         self.meta = pd.DataFrame(meta_df, columns=["filepath", "class"])
-        self.meta["train"] = np.random.RandomState(SEED).binomial(1, 0.8, len(self.meta))
         if not path:
             self.meta.to_csv(META_PATH, index=None)
         else:
