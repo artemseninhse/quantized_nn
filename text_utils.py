@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import pandas as pd
+import random
 import re
 import torch
 from torch.utils.data import (
@@ -9,6 +10,7 @@ from torch.utils.data import (
 )
 
 from collections import Counter
+from sklearn.model_selection import train_test_split
 from tqdm.autonotebook import tqdm
 from utils import (
     BASE_DIR,
@@ -21,10 +23,66 @@ from utils import (
     PAD_METHOD,
     SEED,
     SPLITS,
+    TEST_SIZE,
     TOKS_SPEC,
     dump_pickle,
-    load_pickle
+    load_pickle,
+    set_seed
 )
+
+
+class DataConfigurator():
+    
+    def __init__(self,
+                 pad_method=PAD_METHOD):
+        self.processor = TextProcessor(META_PATH)
+        self.processor.create_meta()
+        self.tokenizer = TextTokenizer(pad_method=pad_method)
+        self.data = {}
+        self.meta = {}
+        
+    def fit_tokenizer(self):
+        train_corpus = []
+        for filepath in self.meta["train"]["filepath"]:
+            train_corpus.append(self.processor.process_text(filepath))
+        self.tokenizer.fit(train_corpus)
+        
+    def get_meta(self):
+        self.meta["train"], self.meta["test"] = \
+            train_test_split(self.processor.meta,
+                             test_size=TEST_SIZE,
+                             random_state=SEED)
+        self.meta["train"], self.meta["val"] = \
+            train_test_split(self.meta["train"],
+                             test_size=TEST_SIZE,
+                             random_state=SEED)
+        
+        set_seed(SEED)
+        infer_sample = random.choices(range(len(self.meta["test"])),
+                                      k=4)
+        self.meta["infer"] = self.meta["test"].iloc[infer_sample]
+    
+    def get_dataset(self,
+                    sample):
+        self.data[sample] = TextDataset(self.meta[sample],
+                                        self.processor,
+                                        self.tokenizer)
+        set_seed(SEED)
+        self.data[sample] = DataLoader(self.data[sample],
+                                       BATCH_SIZE,
+                                       shuffle=True,
+                                       num_workers=0)
+
+    def get_datasets(self):
+        for sample in self.meta.keys():
+            self.get_dataset(sample)
+    
+    def configurate(self):
+        self.get_meta()
+        self.fit_tokenizer()
+        self.get_datasets()
+        return self.data
+        
 
 
 class TextDataset(Dataset):
