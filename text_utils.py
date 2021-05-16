@@ -223,7 +223,7 @@ class TextTokenizer:
         transformed = []
         if not isinstance(X[0], list):
             X = [X]
-        for text in tqdm(X):
+        for text in X:
             transformed.append(self.tokenize_text(text))
         return transformed
     
@@ -284,6 +284,6 @@ class TextProcessor:
             return self.corpus
         self.create_meta()
         return [self.process_text(filepath) for filepath in
-                tqdm(self.meta["filepath"].values)], self.meta["class"].values.tolist()
+                self.meta["filepath"].values], self.meta["class"].values.tolist()
 
             
