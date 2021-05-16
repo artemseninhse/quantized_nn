@@ -5,14 +5,15 @@ import torch.nn as nn
 class SimpleTextCNN(nn.Module):
     
     def __init__(self,
-                 num_classes,
-                 max_len,
-                 vocab_size,
-                 ksize_min,
-                 ksize_max,
-                 in_channels,
-                 out_channels,
-                 pool_size,
+                 num_classes=2,
+                 max_len=500,
+                 vocab_size=1000,
+                 ksize_min=2,
+                 ksize_max=6,
+                 in_channels=10,
+                 out_channels=1,
+                 pool_size=10,
+                 quantization={},
                  custom_layers={}):
         super(SimpleTextCNN, self).__init__()
         assert ksize_min > 1 and \
