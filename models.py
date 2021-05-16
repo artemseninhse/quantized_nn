@@ -1,18 +1,24 @@
 import torch
 import torch.nn as nn
 
+from utils import (
+    EMB_DIM,
+    MAX_LEN,
+    POOL_SIZE
+)
+
 
 class SimpleTextCNN(nn.Module):
     
     def __init__(self,
+                 vocab_size,
                  num_classes=2,
-                 max_len=500,
-                 vocab_size=1000,
+                 max_len=MAX_LEN,
                  ksize_min=2,
-                 ksize_max=6,
-                 in_channels=10,
+                 ksize_max=5,
+                 in_channels=EMB_DIM,
                  out_channels=1,
-                 pool_size=10,
+                 pool_size=POOL_SIZE,
                  quantization={},
                  custom_layers={}):
         super(SimpleTextCNN, self).__init__()
@@ -44,21 +50,33 @@ class SimpleTextCNN(nn.Module):
                 if self.funcs.get(layer_name):
                     self.funcs[layer_name] = layer
         
-        self.layers = {
+        self.layers = nn.ModuleDict({
             "avgpool": self.funcs["avgpool"](self.pool_size),
             "emb": self.funcs["emb"](self.vocab_size+1,
                                 self.in_channels),
-            "convs": [self.funcs["conv"](self.in_channels,
+            "convs": nn.ModuleList([self.funcs["conv"](self.in_channels,
                                 self.out_channels,
                                 ksize) for ksize in \
-                                range(self.ksize_min, self.ksize_max+1)],
+                                range(self.ksize_min, self.ksize_max+1)]),
             "lin": self.funcs["lin"](self.in_linear, 
                              self.out_linear),
             "act": self.funcs["act"]()
-        }
+        })
+        
         
     def forward(self, x):
         # TO DO: calculations
-        return x
+        x = self.layers["emb"](x.long()).view(-1,
+                                              self.max_len,
+                                              self.in_channels).permute(0, 2, 1)
+        feat_maps = []
+        
+        for conv in self.layers["convs"]:
+            conv_out = conv(x)
+            feat_maps.append(self.layers["avgpool"](conv_out))
+         
+        x = torch.cat(feat_maps, dim=-1)
+        x = self.layers["lin"](x.view(-1, self.in_linear))
+        return self.layers["act"](x)
         
     
