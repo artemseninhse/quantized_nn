@@ -31,12 +31,15 @@ from utils import (
     set_seed
 )
 
+MAP_LABS = dict(zip([*range(1, 15)], [*range(14)]))
+
 
 def custom_data_gen(data,
                     tokenizer,
                     max_length,
                     batch_size,
                     device):
+    
     cnt = 0
     batch = []
     labs = []
@@ -46,12 +49,13 @@ def custom_data_gen(data,
                                       padding="max_length",
                                       max_length=max_length,
                                       return_tensors="pt"))
-        labs.append(lab)
+        labs.append(MAP_LABS[lab])
         cnt += 1
         if cnt == batch_size:
             yield torch.cat(batch, axis=0).view(batch_size, max_length).to(device), \
-                        torch.Tensor(labs).view(-1,1)
+                        torch.Tensor(labs)
             batch = []
+            labs = []
             cnt = 0
 
 
