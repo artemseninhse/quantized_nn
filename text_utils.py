@@ -11,6 +11,7 @@ from torch.utils.data import (
 
 from collections import Counter
 from sklearn.model_selection import train_test_split
+from torchtext.datasets import DBpedia
 from tqdm.autonotebook import tqdm
 from utils import (
     BASE_DIR,
