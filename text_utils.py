@@ -39,15 +39,18 @@ def custom_data_gen(data,
                     device):
     cnt = 0
     batch = []
+    labs = []
     for lab, text in data:
         batch.append(tokenizer.encode(text.split()[:max_length],
                                       add_special_tokens=True,
                                       padding="max_length",
                                       max_length=max_length,
                                       return_tensors="pt"))
+        labs.append(lab)
         cnt += 1
         if cnt == batch_size:
-            yield torch.cat(batch, axis=0).view(batch_size, 1, max_length).to(device), lab
+            yield torch.cat(batch, axis=0).view(batch_size, max_length).to(device), \
+                        torch.Tensor(labs).view(-1,1)
             batch = []
             cnt = 0
 
