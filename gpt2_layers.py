@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from transformers.activations import ACT2FN
 from quantizer import (
+    custom_round,
     quantize_dynamic,
     quantize_static
 )
@@ -299,13 +300,18 @@ class Conv1D(nn.Module):
 #         self.scale_wts, self.zp_wts = self._calc_quant_params(self.min_wts, self.max_wts)
 #         if self.quant_type == "static":
 #             self.quant_wts = quantize_static(self.weight, self.scale_wts, self.zp_wts, self.qmin, self.qmax)
+    def _get_mean_stats(self):
+        for stat, vals in self.static_stats.items():
+            self.static_stats[stat] = torch.Tensor(vals).mean()
+#             if self.quant_type == "training":
+#                 self.static_stats[stat] = nn.Parameter(self.static_stats[stat], requires_grad=True)
     
     def _calc_quant_params(self, min_val, max_val):
-        if isinstance(min_val, list):
-            min_val = float(np.median(min_val))
-            max_val = float(np.median(max_val))
-        min_val = min(0.0, min_val)
-        max_val = max(0.0, max_val)
+#         if isinstance(min_val, list):
+#             min_val = float(np.median(min_val))
+#             max_val = float(np.median(max_val))
+        min_val = min(0.0, min_val.item())
+        max_val = max(0.0, max_val.item())
         if max_val == min_val:
             scale = 1.0
             zp = 0
@@ -340,7 +346,7 @@ class Conv1D(nn.Module):
 
     def forward(self, x):
         size_out = x.size()[:-1] + (self.nf,)
-        if self.quant_type == "static":
+        if self.quant_type in ["static", "training"]:
             if self.static_batch > 0:
                 x_inp = x.clone()
                 wts_inp = self.weight.clone()
@@ -355,10 +361,18 @@ class Conv1D(nn.Module):
                 x = x.view(*size_out)
                 return x
             elif not self.scale_x and not self.zp_x:
+                self._get_mean_stats()
                 self.scale_x, self.zp_x = self._calc_quant_params(self.static_stats["min_x"], 
                                                                   self.static_stats["max_x"])
                 self.scale_wts, self.zp_wts = self._calc_quant_params(self.static_stats["min_wts"], 
                                                                   self.static_stats["max_wts"])
+                if self.quant_type == "training":
+                    if not isinstance(self.scale_wts, torch.Tensor):
+                        self.scale_wts = torch.Tensor([self.scale_wts])
+                    if not isinstance(self.scale_x, torch.Tensor):
+                        self.scale_x = torch.Tensor([self.scale_x])
+                    self.scale_wts = nn.Parameter(self.scale_wts, requires_grad=True).cuda()
+                    self.scale_x = nn.Parameter(self.scale_x, requires_grad=True).cuda()
                 x = torch.addmm(self.bias, x.view(-1, x.size(-1)), self.weight)
                 x = x.view(*size_out)
                 return x

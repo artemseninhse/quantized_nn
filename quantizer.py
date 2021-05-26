@@ -3,6 +3,20 @@ import torch.nn as nn
 
 # Code adapted from: https://github.com/jafermarq/WinogradAwareNets/blob/master/src/quantization.py
 
+class MyRound(torch.autograd.Function):
+    
+    @staticmethod
+    def forward(ctx, input):
+        return torch.round(input)
+    
+    @staticmethod
+    def backward(ctx, grad_output):
+        return grad_output
+    
+    
+custom_round = MyRound.apply
+
+
 def quantize_dynamic(x, qmin, qmax):
     output = x.clone()
     min_val = x.detach().min()
@@ -28,11 +42,15 @@ def quantize_dynamic(x, qmin, qmax):
 
     return output
 
+
 def quantize_static(x, scale, zp, qmin, qmax):
-    
+    if isinstance(scale, torch.Tensor):
+        scale = scale.item()
     output = x.clone()
     output.div_(scale).add_(zp)
-    output.round_().clamp_(qmin, qmax)  # quantize
+    output = custom_round(output)
+    output.clamp_(qmin, qmax)  # quantize
     output.add_(-zp).mul_(scale)  # dequantize
 
     return output
+
