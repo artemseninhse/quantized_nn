@@ -5,6 +5,7 @@ import torch.nn as nn
 from transformers.activations import ACT2FN
 from quantizer import (
     custom_round,
+    
     quantize_dynamic,
     quantize_static
 )
@@ -295,6 +296,8 @@ class Conv1D(nn.Module):
             "max_wts": []
         }
         
+        self.input_tensor = 0
+        
 #         self.min_wts = self.weight.detach().min()
 #         self.max_wts = self.weight.detach().max()
 #         self.scale_wts, self.zp_wts = self._calc_quant_params(self.min_wts, self.max_wts)
@@ -346,7 +349,7 @@ class Conv1D(nn.Module):
 
     def forward(self, x):
         size_out = x.size()[:-1] + (self.nf,)
-        if self.quant_type in ["static", "training"]:
+        if self.quant_type in ["static", "ste", "qsin"]:
             if self.static_batch > 0:
                 x_inp = x.clone()
                 wts_inp = self.weight.clone()
@@ -366,11 +369,12 @@ class Conv1D(nn.Module):
                                                                   self.static_stats["max_x"])
                 self.scale_wts, self.zp_wts = self._calc_quant_params(self.static_stats["min_wts"], 
                                                                   self.static_stats["max_wts"])
-                if self.quant_type == "training":
+                if self.quant_type in ["ste", "qsin"]:
                     if not isinstance(self.scale_wts, torch.Tensor):
                         self.scale_wts = torch.Tensor([self.scale_wts])
                     if not isinstance(self.scale_x, torch.Tensor):
                         self.scale_x = torch.Tensor([self.scale_x])
+                    self.input_tensor = x
                     self.scale_wts = nn.Parameter(self.scale_wts, requires_grad=True).cuda()
                     self.scale_x = nn.Parameter(self.scale_x, requires_grad=True).cuda()
                 x = torch.addmm(self.bias, x.view(-1, x.size(-1)), self.weight)

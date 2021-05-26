@@ -17,6 +17,44 @@ class MyRound(torch.autograd.Function):
 custom_round = MyRound.apply
 
 
+class QuantRegularizer:
+    
+    def __init__(self,
+                 scale,
+                 zp,
+                 qmin,
+                 qmax,
+                 quant_type
+                 ):
+        self.scale = scale
+        self.zp = zp
+        self.qmin = qmin
+        self.qmax =qmax
+        self.quant_type = quant_type
+
+    def func_ste(self,
+                 x):
+        return quantize_static(x,
+                               self.scale,
+                               self.zp,
+                               self.qmin,
+                               self.qmax)
+
+    def func_qsin(self,
+                  x):
+        below_ = (x <= self.qmin).int()
+        above_ = (x >= self.qmax).int()
+        bw_ = 1 - below_ - above_
+        return torch.sin(pi_ * x) ** 2 * bw_ + \
+                pi_ ** 2 * (x - self.qmin) ** 2 * below_ + \
+                pi_ ** 2 * (x - self.qmax) ** 2 * above_
+
+    def process_tensor(self,
+                       x):
+        quant_func = getattr(self, "_".join(["func", self.quant_type]))
+        return torch.sum((x - quant_func(x)) ** 2)
+
+
 def quantize_dynamic(x, qmin, qmax):
     output = x.clone()
     min_val = x.detach().min()
@@ -39,7 +77,6 @@ def quantize_dynamic(x, qmin, qmax):
     output.div_(scale).add_(zp)
     output.round_().clamp_(qmin, qmax)  # quantize
     output.add_(-zp).mul_(scale)  # dequantize
-
     return output
 
 
